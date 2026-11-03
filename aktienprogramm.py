@@ -1269,9 +1269,8 @@ def aktien_liveticker(df):
         # Ältester der letzten 7 Werte steht links
         werte = []
         for _, zeile in letzte_7.iterrows():
-            datum = zeile["Datum"].strftime("%d.%m.%y")
             kurs = kurs_text(zeile["Kurs"])
-            werte.append(f"{datum}: {kurs}")
+            werte.append(kurs)
 
         # Fehlende Werte mit '-' auffüllen
         while len(werte) < 7:
@@ -1299,10 +1298,7 @@ def aktien_liveticker(df):
                 online_kurs = letzte_online_zeile["Close"]
                 online_zeit = online_daten.index[-1]
 
-                live_text = (
-                    f"{online_zeit.strftime('%d.%m %H:%M')}: "
-                    f"{kurs_text(online_kurs)}"
-                )
+                live_text = kurs_text(online_kurs)
             else:
                 live_text = "keine Daten"
 
@@ -1342,7 +1338,7 @@ def hauptmenue(df):
         print("5 - Historische Kurse aller Aktien vervollständigen")
         print("6 - Quartalsübersicht in der Konsole ausgeben")
         print("7 - Monatsübersicht in der Konsole ausgeben")
-        print("8 - Liveticker mit den letzten 7 + dem aktuell verfügbaren Kurs)
+        print("8 - Liveticker mit den letzten 7 + dem aktuell verfügbaren Kurs")
         print("9 - Programm beenden")
 
         auswahl = input("Bitte Auswahl eingeben: ").strip()
