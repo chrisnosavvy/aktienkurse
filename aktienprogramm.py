@@ -1175,6 +1175,153 @@ def kursdiagramm(df):
     plt.tight_layout()
     plt.show()
 
+# ============================================================
+# 8. Liveticker mit den letzten 7 gespeicherten Kursen + Online-Kurs
+# ============================================================
+
+
+def aktien_liveticker(df):
+    """Zeigt die letzten 7 gespeicherten Kurse und den neuesten Online-Kurs."""
+
+    if df.empty:
+        print("Es sind noch keine Aktienkurse gespeichert.")
+        return
+
+    # Daten vorbereiten
+    daten = df.copy()
+    daten["Datum"] = pd.to_datetime(daten["Datum"], errors="coerce")
+    daten["Kurs"] = pd.to_numeric(daten["Kurs"], errors="coerce")
+
+    daten = daten[
+        daten["Datum"].notna()
+        & daten["Kurs"].notna()
+        & (daten["Kurs"] > 0)
+    ].copy()
+
+    if daten.empty:
+        print("Keine gültigen Aktienkurse gefunden.")
+        return
+
+    # Doppelte Kurse am selben Tag vermeiden
+    sortierspalten = ["Symbol", "Datum"]
+    if "Abfragedatum" in daten.columns:
+        sortierspalten.append("Abfragedatum")
+
+    daten = daten.sort_values(sortierspalten)
+    daten = daten.drop_duplicates(
+        subset=["Symbol", "Datum"], keep="last"
+    )
+
+    # Stammdaten der Aktien ermitteln
+    aktien = (
+        daten.sort_values("Datum")
+        .drop_duplicates(subset=["Symbol"], keep="last")
+        .sort_values("Kürzel")
+    )
+
+    # Tabellenbreiten
+    BREITE = 19
+    LIVE_BREITE = 24
+
+    def kurs_text(wert):
+        if wert is None or pd.isna(wert):
+            return "-"
+        return f"{wert:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    print()
+    print("=" * 190)
+    print(" LIVETICKER - LETZTE 7 GESPEICHERTE KURSE + ONLINE-KURS")
+    print("=" * 190)
+
+    # Tabellenkopf
+    kopf = (
+        f"{'Kürzel':<10}"
+        f"{'Name':<23}"
+        f"{'Währ.':<7}"
+    )
+
+    for nummer in range(1, 8):
+        kopf += f"{('Kurs ' + str(nummer)):>{BREITE}}"
+
+    kopf += f"{'Live (online)':>{LIVE_BREITE}}"
+
+    print(kopf)
+    print("-" * len(kopf))
+
+    # Jede Aktie einzeln anzeigen
+    for _, aktie in aktien.iterrows():
+
+        symbol = aktie["Symbol"]
+        kuerzel = str(aktie["Kürzel"])[:9]
+        name = str(aktie["Name"])[:22]
+        waehrung = str(aktie["Währung"])[:6]
+
+        # Letzte 7 gespeicherte Kurse dieser Aktie
+        gruppe = daten[daten["Symbol"] == symbol]
+        letzte_7 = gruppe.sort_values("Datum").tail(7)
+
+        ausgabe = (
+            f"{kuerzel:<10}"
+            f"{name:<23}"
+            f"{waehrung:<7}"
+        )
+
+        # Ältester der letzten 7 Werte steht links
+        werte = []
+        for _, zeile in letzte_7.iterrows():
+            datum = zeile["Datum"].strftime("%d.%m.%y")
+            kurs = kurs_text(zeile["Kurs"])
+            werte.append(f"{datum}: {kurs}")
+
+        # Fehlende Werte mit '-' auffüllen
+        while len(werte) < 7:
+            werte.insert(0, "-")
+
+        for wert in werte:
+            ausgabe += f"{wert:>{BREITE}}"
+
+        # Aktuellen Online-Kurs abrufen
+        try:
+            ticker = yf.Ticker(symbol)
+
+            online_daten = ticker.history(
+                period="5d",
+                interval="1m",
+                prepost=True,
+                auto_adjust=False
+            )
+
+            online_daten = online_daten.dropna(subset=["Close"])
+
+            if not online_daten.empty:
+                letzte_online_zeile = online_daten.iloc[-1]
+
+                online_kurs = letzte_online_zeile["Close"]
+                online_zeit = online_daten.index[-1]
+
+                live_text = (
+                    f"{online_zeit.strftime('%d.%m %H:%M')}: "
+                    f"{kurs_text(online_kurs)}"
+                )
+            else:
+                live_text = "keine Daten"
+
+        except Exception:
+            live_text = "Abruf fehlgeschlagen"
+
+        BLAU = "\033[34m"
+        RESET = "\033[0m"
+
+        ausgabe += f"{BLAU}{live_text:>{LIVE_BREITE}}{RESET}"
+
+        print(ausgabe)
+
+    print()
+    print("Kurs 1 = ältester der letzten 7 gespeicherten Werte.")
+    print("Kurs 7 = neuester gespeicherter Wert.")
+    print("Live = neuester online verfügbarer Minutenkurs.")
+    print("Der Online-Kurs wird NICHT in der CSV-Datei gespeichert.")
+    print()
 
 
 # ============================================================
@@ -1195,6 +1342,7 @@ def hauptmenue(df):
         print("5 - Historische Kurse aller Aktien vervollständigen")
         print("6 - Quartalsübersicht in der Konsole ausgeben")
         print("7 - Monatsübersicht in der Konsole ausgeben")
+        print("8 - Liveticker mit den letzten 7 gespeicherten Kursen")
         print("9 - Programm beenden")
 
         auswahl = input("Bitte Auswahl eingeben: ").strip()
@@ -1219,6 +1367,9 @@ def hauptmenue(df):
 
         elif auswahl == "7":
             monatsuebersicht_konsole(df)
+            
+        elif auswahl == "8":
+            liveticker(df)
             
         elif auswahl == "9":
             datei_speichern(df)
