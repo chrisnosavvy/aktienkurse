@@ -1342,7 +1342,7 @@ def hauptmenue(df):
         print("5 - Historische Kurse aller Aktien vervollständigen")
         print("6 - Quartalsübersicht in der Konsole ausgeben")
         print("7 - Monatsübersicht in der Konsole ausgeben")
-        print("8 - Liveticker mit den letzten 7 gespeicherten Kursen")
+        print("8 - Liveticker mit den letzten 7 + dem aktuell verfügbaren Kurs)
         print("9 - Programm beenden")
 
         auswahl = input("Bitte Auswahl eingeben: ").strip()
@@ -1369,7 +1369,7 @@ def hauptmenue(df):
             monatsuebersicht_konsole(df)
             
         elif auswahl == "8":
-            liveticker(df)
+            aktien_liveticker(df)
             
         elif auswahl == "9":
             datei_speichern(df)
