@@ -1233,11 +1233,16 @@ def hauptmenue(df):
 # ============================================================
 
 if __name__ == "__main__":
-
     df = datei_laden()
 
-    # Erst vorhandene Kurse aktualisieren
-    df = kurse_aktualisieren(df)
+    print("\nMöchtest du jetzt alle Aktienkurse aktualisieren?")
+    antwort = input("Bitte J für Ja oder N für Nein eingeben: ").strip().upper()
 
-    # Anschließend Hauptmenü starten
+    if antwort == "J":
+        print("\nDie Aktienkurse werden aktualisiert ...")
+        df = kurse_aktualisieren(df)
+        print("\nAktualisierung abgeschlossen.")
+    else:
+        print("\nKeine Aktualisierung durchgeführt.")
+
     hauptmenue(df)
